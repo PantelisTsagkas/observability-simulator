@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Behaviour Simulator</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 0.5rem;
+            color: #38bdf8;
+            font-size: 1.8rem;
+        }
+        .subtitle {
+            text-align: center;
+            color: #94a3b8;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        button {
+            padding: 0.9rem 1.2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+        button:hover { transform: translateY(-2px); opacity: 0.9; }
+        button:active { transform: translateY(0); }
+        .btn-success { background: #22c55e; color: #052e16; }
+        .btn-slow { background: #f59e0b; color: #451a03; }
+        .btn-error { background: #ef4444; color: #fff; }
+        .btn-cpu { background: #8b5cf6; color: #fff; }
+        .btn-random { background: #06b6d4; color: #042f2e; }
+        .response-panel {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .response-panel h3 {
+            color: #94a3b8;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.75rem;
+        }
+        #response {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            color: #cbd5e1;
+            min-height: 2rem;
+        }
+        .log-panel {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+        .log-panel h3 {
+            color: #94a3b8;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.75rem;
+        }
+        #logs {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.75rem;
+            max-height: 300px;
+            overflow-y: auto;
+            color: #94a3b8;
+        }
+        .log-entry { padding: 0.2rem 0; border-bottom: 1px solid #1e293b; }
+        .log-entry.error { color: #fca5a5; }
+        .log-entry.warning { color: #fcd34d; }
+        .status-indicator {
+            display: inline-block;
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+            background: #22c55e;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .loading { opacity: 0.6; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><span class="status-indicator"></span>System Behaviour Simulator</h1>
+        <p class="subtitle">Trigger simulated system behaviours and observe metrics, logs, and alerts</p>
+
+        <div class="controls">
+            <button class="btn-success" onclick="simulate('success')">✓ Success</button>
+            <button class="btn-slow" onclick="simulate('slow?delay=3')">⏱ Slow (3s)</button>
+            <button class="btn-error" onclick="simulate('error')">✗ Error</button>
+            <button class="btn-cpu" onclick="simulate('cpu')">⚡ CPU Load</button>
+            <button class="btn-random" onclick="simulate('random')">🎲 Random</button>
+        </div>
+
+        <div class="response-panel">
+            <h3>Last Response</h3>
+            <div id="response">Click a button to trigger a simulation...</div>
+        </div>
+
+        <div class="log-panel">
+            <h3>Activity Log</h3>
+            <div id="logs"></div>
+        </div>
+    </div>
+
+    <script>
+        const responseEl = document.getElementById('response');
+        const logsEl = document.getElementById('logs');
+
+        async function simulate(action) {
+            const timestamp = new Date().toLocaleTimeString();
+            addLog(`[${timestamp}] → Sending /simulate/${action}`, 'info');
+
+            try {
+                const res = await fetch(`/api/simulate/${action}`);
+                const data = await res.json();
+                const pretty = JSON.stringify(data, null, 2);
+                responseEl.textContent = `HTTP ${res.status}\n${pretty}`;
+
+                const level = res.ok ? 'info' : 'error';
+                addLog(`[${timestamp}] ← ${res.status} ${data.message}`, level);
+            } catch (err) {
+                responseEl.textContent = `Error: ${err.message}`;
+                addLog(`[${timestamp}] ✗ Network error: ${err.message}`, 'error');
+            }
+        }
+
+        function addLog(message, level) {
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${level}`;
+            entry.textContent = message;
+            logsEl.prepend(entry);
+            // Keep max 50 entries
+            while (logsEl.children.length > 50) {
+                logsEl.removeChild(logsEl.lastChild);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+[project]
+name = "observability-simulator-backend"
+version = "1.0.0"
+description = "FastAPI-based System Behaviour Simulator for observability demos"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "prometheus-client>=0.21.0",
+    "structlog>=24.4.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
