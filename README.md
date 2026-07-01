@@ -2,6 +2,19 @@
 
 A production-style local observability sandbox built for DevOps portfolio demonstrations. Trigger simulated system behaviours (success, errors, latency, CPU load) and observe the full telemetry pipeline in real time.
 
+## Demo
+
+> Full walkthrough: [demo-observability-simulator.mov](docs/demo-observability-simulator.mov)
+
+**Frontend — Simulator UI**
+![Frontend UI](docs/demo-frontend.png)
+
+**Grafana — Metrics Dashboard**
+![Grafana Dashboard](docs/demo-grafana.png)
+
+**Loki — Application Logs**
+![Application Logs](docs/demo-logs.png)
+
 ## Architecture
 
 ```
