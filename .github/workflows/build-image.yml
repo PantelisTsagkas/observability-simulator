@@ -1,0 +1,57 @@
+# Builds the backend container image and pushes it to GitHub Container Registry.
+#
+# Why GHCR: it's free for public repos, needs no extra credentials (the
+# built-in GITHUB_TOKEN can push), and the k8s-observability-platform repo
+# pulls this image in every phase (k3d locally, EKS later).
+#
+# Tags pushed:
+#   - latest        -> convenient for local experiments
+#   - sha-<commit>  -> immutable, what GitOps (Phase 2) pins deployments to
+name: build-image
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/build-image.yml"
+  workflow_dispatch: {} # allow manual runs from the Actions tab
+
+permissions:
+  contents: read
+  packages: write # required for GITHUB_TOKEN to push to GHCR
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract image metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/observability-simulator
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=sha-
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # GitHub Actions cache keeps rebuilds fast (uv layer rarely changes)
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

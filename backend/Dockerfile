@@ -20,6 +20,11 @@ COPY --from=builder /app/app /app/app
 
 ENV PATH="/app/.venv/bin:$PATH"
 
+# Run as a non-root user: Kubernetes securityContext (runAsNonRoot) will
+# reject root containers, and no capability here needs root anyway
+RUN useradd --system --uid 1001 --no-create-home appuser
+USER appuser
+
 EXPOSE 8000
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--access-log"]
